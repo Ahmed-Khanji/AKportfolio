@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<!--
+	Massively by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>AKportfolio</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper" class="fade-in">
+
+				<!-- Intro -->
+					<div id="intro">
+						<h1>AHMED<br />
+						SOFTWARE DEVELOPER<br />
+						Portfolio</h1>		
+						<p>Upcoming Software Engineer well skilled in Full Stack Web Development, Python Automation, IT
+						 <a href="https://x.com/AK_SoftwareDev">@AK_SoftwareDev</a>
+						<ul class="actions">
+							<li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">Continue</a></li>
+						</ul>
+					</div>
+
+				<!-- Header -->
+					<header id="header">
+						<a href="index.html" class="logo">AKportfolio</a>
+					</header>
+
+				<!-- Nav -->
+					<nav id="nav">
+						<ul class="links">
+							<li class="active"><a href="index.html">Projects</a></li>
+							<li><a href="generic.html">Skills and Certifications</a></li>
+						</ul>
+						<ul class="icons">
+							<li><a href="https://x.com/AK_SoftwareDev" class="icon brands alt fa-twitter"><span class="label">Twitter</span></a></li>
+							<li><a href="https://www.instagram.com/ak_softwaredev/" class="icon brands alt fa-instagram"><span class="label">Instagram</span></a></li>
+							<li><a href="https://github.com/Ahmed-Khanji" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
+							<li><a href="https://www.linkedin.com/in/ahmed-khanji-04119627b/" class="icon brands alt fa-linkedin-in"><span class="label">linkedin</span></a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Featured Post -->
+							<article class="post featured">
+								<header class="major">
+									<h2><a href="#">AK CRM Solutions</a></h2>
+									<p>AK CRM Solutions is a programmed SaaS that offers CRM platform for freelancers and 
+									enterprises, enabling seamless management of client communications, 
+									sales, payments, and productivity analytics.</p>
+								</header>
+								<a href="#" class="image main"><img src="images/Business.png" alt="" /></a>
+								<ul class="actions special">
+									<li><a href="#" class="button large">View Web</a></li>
+								</ul>
+							</article>
+
+						<!-- Posts -->
+							<section class="posts">
+								<article>
+									<header>
+										<h2><a href="https://github.com/Ahmed-Khanji/Automation-for-User-Monitoring-and-System-Health">User Monitoring and System Health</a></h2>
+									</header>
+									<a href="https://github.com/Ahmed-Khanji/Automation-for-User-Monitoring-and-System-Health" class="image fit"><img src="images/automated data.jpg" alt="" /></a>
+									<p>Automation that tracks logged-in users on machines, monitors CPU and memory health, and generates a daily report for efficient IT management and machine usage</p>
+									<ul class="actions special">
+										<li><a href="https://github.com/Ahmed-Khanji/Automation-for-User-Monitoring-and-System-Health" class="button">View Project</a></li>
+									</ul>
+								</article>
+								<article>
+									<header>
+										<h2><a href="https://github.com/Ahmed-Khanji/Email-Automation-Tool">Email Automation Tool</a></h2>
+									</header>
+									<a href="https://github.com/Ahmed-Khanji/Email-Automation-Tool" class="image fit"><img src="images/Email Automation.png" alt="" /></a>
+									<p>Script that sends personalized emails to a list of recipients based on a 
+									template. It could be used for marketing campaigns, follow-up emails, or newsletters.</p>
+									<ul class="actions special">
+										<li><a href="https://github.com/Ahmed-Khanji/Email-Automation-Tool" class="button">View Project</a></li>
+									</ul>
+								</article>
+							</section>
+
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<form id="contactForm">
+								<div class="fields">
+									<div class="field">
+										<label for="name">Name</label>
+										<input type="text" name="name" id="name" required />
+									</div>
+									<div class="field">
+										<label for="email">Email</label>
+										<input type="email" name="email" id="email" required />
+									</div>
+									<div class="field">
+										<label for="message">Message</label>
+										<textarea name="message" id="message" rows="3" required></textarea>
+									</div>
+								</div>
+								<ul class="actions">
+									<li><input type="submit" value="Send Message" /></li>
+								</ul>
+							</form>
+							
+							<!-- Success message (hidden initially) -->
+							<p id="successMessage" style="display: none; color: green;">Message submitted, thank you!</p>
+						</section>
+				<!-- JavaScript -->
+					<script>
+						// Handle form submission
+						document.getElementById('contactForm').addEventListener('submit', function(event) {
+							event.preventDefault(); // Prevent the form from actually submitting
+							
+							// Show the success message
+							const successMessage = document.getElementById('successMessage');
+							successMessage.style.display = 'block';
+							
+							// Hide the success message after 5 seconds
+							setTimeout(function() {
+								successMessage.style.display = 'none';
+							}, 5000);
+							
+							// Optionally, clear the form inputs
+							document.getElementById('contactForm').reset();
+						});
+						</script>
+
+						<section class="split contact">
+						<section class="alt">
+							<h3>Location</h3>
+							<p>Montreal, QC.</p>
+						</section>
+						<section>
+							<h3>Email</h3>
+							<p><a href="mailto:aksoftwaredev1@gmail.com">aksoftwaredev1@gmail.com</a></p>
+						</section>
+						<section>
+							<h3>Social</h3>
+							<ul class="icons alt">
+								<li><a href="https://x.com/AK_SoftwareDev" class="icon brands alt fa-twitter"><span class="label">Twitter</span></a></li>
+								<li><a href="https://www.instagram.com/ak_softwaredev/" class="icon brands alt fa-instagram"><span class="label">Instagram</span></a></li>
+								<li><a href="https://github.com/Ahmed-Khanji" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
+								<li><a href="https://www.linkedin.com/in/ahmed-khanji-04119627b/" class="icon brands alt fa-linkedin-in"><span class="label">linkedin</span></a></li>
+							</ul>
+						</section>
+					</section>
+				</footer>
+
+				<!-- Copyright -->
+					<div id="copyright">
+						<ul><li>&copy; Untitled</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
+					</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
