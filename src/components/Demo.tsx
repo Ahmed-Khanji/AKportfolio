@@ -1,183 +1,94 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, MousePointer2 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import demoAuth from "@/assets/demo-auth.png";
-import demoHome from "@/assets/demo-home.png";
-import demoChat from "@/assets/demo-chat.png";
-import demoQuizLight from "@/assets/demo-quiz-light.png";
-import demoQuizDark from "@/assets/demo-quiz-dark.png";
+import { ExternalLink, Play, Pause, Volume2, VolumeX, Maximize2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-type SceneId = "auth" | "home" | "chat" | "quiz" | "ending";
+const VIDEO_SRC = `${import.meta.env.BASE_URL}stemconnect-demo.mp4`;
 
-interface CursorStep {
-  x: string;
-  y: string;
-  duration: number;
-  click?: boolean;
-}
-
-interface SceneConfig {
-  next: SceneId;
-  duration: number;
-  image?: string;
-  label?: string;
-  description?: string;
-  zoom?: { scale: number; originX: string; originY: string };
-  cursorSteps: CursorStep[];
-}
-
-const timeline: Record<SceneId, SceneConfig> = {
-  auth: {
-    next: "home",
-    duration: 4000,
-    image: demoAuth,
-    label: "Authentication",
-    description: "Secure registration with Google SSO and form validation",
-    zoom: { scale: 1.05, originX: "50%", originY: "40%" },
-    cursorSteps: [
-      // Start top-left
-      { x: "5%", y: "5%", duration: 0.5 },
-      // Move smoothly to center target
-      { x: "50%", y: "50%", duration: 1.5 },
-      // Small delay before clicking (stays in place)
-      { x: "50%", y: "50%", duration: 0.6 },
-      // Click
-      { x: "50%", y: "30%", duration: 0.2, click: true },
-    ],
-  },
-  home: {
-    next: "chat",
-    duration: 7000,
-    image: demoHome,
-    label: "Landing Page",
-    description: "Hero section with key features and call-to-action",
-    zoom: { scale: 1.08, originX: "50%", originY: "20%" },
-    cursorSteps: [
-      { x: "50%", y: "15%", duration: 1.0 },
-      { x: "50%", y: "35%", duration: 1.5, click: true },
-      { x: "30%", y: "55%", duration: 1.0 },
-      { x: "50%", y: "55%", duration: 0.8 },
-      { x: "70%", y: "55%", duration: 0.8 },
-      { x: "50%", y: "80%", duration: 1.0 },
-    ],
-  },
-  chat: {
-    next: "quiz",
-    duration: 8000,
-    image: demoChat,
-    label: "Course Chat",
-    description: "Real-time collaborative messaging with course channels",
-    zoom: { scale: 1.06, originX: "30%", originY: "40%" },
-    cursorSteps: [
-      { x: "12%", y: "25%", duration: 1.0, click: true },
-      { x: "12%", y: "35%", duration: 1.2, click: true },
-      { x: "50%", y: "30%", duration: 1.0 },
-      { x: "50%", y: "50%", duration: 1.0 },
-      { x: "85%", y: "25%", duration: 1.2, click: true },
-      { x: "50%", y: "95%", duration: 1.0 },
-    ],
-  },
-  quiz: {
-    next: "ending",
-    duration: 8000,
-    image: demoQuizLight,
-    label: "Pop Quiz",
-    description: "Interactive quizzes with progress tracking",
-    zoom: { scale: 1.05, originX: "50%", originY: "30%" },
-    cursorSteps: [
-      { x: "50%", y: "25%", duration: 1.2 },
-      { x: "30%", y: "45%", duration: 1.0 },
-      { x: "70%", y: "45%", duration: 0.8 },
-      { x: "90%", y: "5%", duration: 1.0, click: true }, // toggle dark mode
-    ],
-  },
-  ending: {
-    next: "auth",
-    duration: 6000,
-    cursorSteps: [],
-  },
+const formatTime = (seconds: number) => {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
-const sceneOrder: SceneId[] = ["auth", "home", "chat", "quiz", "ending"];
-
-function SceneWrapper({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.div
-      className={`absolute inset-0 flex flex-col items-center justify-center text-white p-8 ${className}`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 const Demo = () => {
-  const [scene, setScene] = useState<SceneId>("auth");
-  const [cursorPos, setCursorPos] = useState({ x: "5%", y: "5%" });
-  const [isClicking, setIsClicking] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hasStarted, setHasStarted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [dark, setDark] = useState(false);
-  const [cursorStepIndex, setCursorStepIndex] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const startDemo = useCallback(() => {
-    setIsPlaying(true);
-    setScene("auth");
-    setDark(false);
-    setCursorStepIndex(0);
-    setCursorPos({ x: "50%", y: "50%" });
+  const startPlayback = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      await video.play();
+      setHasStarted(true);
+      setIsPlaying(true);
+    } catch {
+      video.muted = true;
+      setIsMuted(true);
+      await video.play();
+      setHasStarted(true);
+      setIsPlaying(true);
+    }
+  };
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+      setIsPlaying(true);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const video = videoRef.current;
+    if (!video || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    video.currentTime = Math.min(Math.max(ratio, 0), 1) * duration;
+  };
+
+  const enterFullscreen = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen?.();
+    }
+  };
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (hideTimeout.current) clearTimeout(hideTimeout.current);
+    if (isPlaying) {
+      hideTimeout.current = setTimeout(() => setShowControls(false), 2500);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hideTimeout.current) clearTimeout(hideTimeout.current);
+    };
   }, []);
-
-  // Timeline: advance scenes
-  useEffect(() => {
-    if (!isPlaying) return;
-    const config = timeline[scene];
-
-    const timer = setTimeout(() => {
-      const next = config.next;
-      if (next === "auth") {
-        // Loop ended, stop playing
-        setIsPlaying(false);
-        setScene("auth");
-        setDark(false);
-      } else {
-        setScene(next);
-        setCursorStepIndex(0);
-        setCursorPos({ x: "50%", y: "50%" });
-      }
-    }, config.duration);
-
-    return () => clearTimeout(timer);
-  }, [scene, isPlaying]);
-
-  // Animate cursor through steps
-  useEffect(() => {
-    if (!isPlaying || scene === "ending") return;
-    const config = timeline[scene];
-    if (cursorStepIndex >= config.cursorSteps.length) return;
-
-    const step = config.cursorSteps[cursorStepIndex];
-    const timeout = setTimeout(() => {
-      setCursorPos({ x: step.x, y: step.y });
-      if (step.click) {
-        setIsClicking(true);
-        setTimeout(() => setIsClicking(false), 200);
-        // Dark mode toggle on quiz scene last click
-        if (scene === "quiz" && cursorStepIndex === config.cursorSteps.length - 1) {
-          setTimeout(() => setDark(true), 300);
-        }
-      }
-      setCursorStepIndex((prev) => prev + 1);
-    }, step.duration * 1000);
-
-    return () => clearTimeout(timeout);
-  }, [isPlaying, scene, cursorStepIndex]);
-
-  const config = timeline[scene];
-  const currentImage = scene === "quiz" && dark ? demoQuizDark : config.image;
-  const sceneIndex = sceneOrder.indexOf(scene);
 
   return (
     <section id="ai" className="section-padding relative">
@@ -209,18 +120,39 @@ const Demo = () => {
           <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/40 via-transparent to-accent/40 -z-10" />
 
           <div
-            className="relative aspect-video bg-black/90 overflow-hidden cursor-pointer"
-            onClick={!isPlaying ? startDemo : undefined}
+            ref={containerRef}
+            className="relative aspect-video bg-black overflow-hidden"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => isPlaying && setShowControls(false)}
           >
-            {/* Start overlay */}
-            <AnimatePresence mode="wait">
-              {!isPlaying && (
-                <motion.div
+            <video
+              ref={videoRef}
+              src={VIDEO_SRC}
+              className="absolute inset-0 w-full h-full object-contain bg-black"
+              playsInline
+              preload="metadata"
+              onClick={hasStarted ? togglePlay : undefined}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onEnded={() => setIsPlaying(false)}
+              onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+              onTimeUpdate={(e) => {
+                const v = e.currentTarget;
+                setCurrentTime(v.currentTime);
+                setProgress(v.duration ? (v.currentTime / v.duration) * 100 : 0);
+              }}
+            />
+
+            <AnimatePresence>
+              {!hasStarted && (
+                <motion.button
                   key="start-overlay"
+                  type="button"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm z-20"
+                  onClick={startPlayback}
+                  className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm z-20 cursor-pointer"
                 >
                   <motion.div
                     className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center shadow-lg shadow-primary/30 mb-4"
@@ -235,157 +167,72 @@ const Demo = () => {
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <svg className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+                    <Play className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" />
                   </motion.div>
-                  <p className="text-sm text-muted-foreground">Click to start demo</p>
-                </motion.div>
+                  <p className="text-sm text-muted-foreground">Click to play demo</p>
+                </motion.button>
               )}
             </AnimatePresence>
 
-            {/* Scene images */}
-            <AnimatePresence mode="wait">
-              {isPlaying && scene !== "ending" && currentImage && (
-                <motion.div
-                  key={`${scene}-${dark ? "dark" : "light"}`}
-                  initial={{ opacity: 0, scale: 1.02 }}
-                  animate={{
-                    opacity: 1,
-                    scale: config.zoom?.scale || 1,
-                  }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{
-                    opacity: { duration: 0.6 },
-                    scale: { duration: config.duration / 1000, ease: "easeOut" },
-                    x: { duration: 0.4 },
-                  }}
-                  className={`absolute inset-0 transition-colors duration-700 ${
-                    scene === "quiz" && dark ? "brightness-90" : ""
-                  }`}
-                  style={{
-                    transformOrigin: config.zoom ? `${config.zoom.originX} ${config.zoom.originY}` : "center center",
-                  }}
-                >
-                  <img
-                    src={currentImage}
-                    alt={config.label || scene}
-                    className="w-full h-full object-cover object-top"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Animated cursor */}
-            {isPlaying && scene !== "ending" && (
-              <motion.div
-                className="absolute z-30 pointer-events-none"
-                animate={{ left: cursorPos.x, top: cursorPos.y }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                style={{ transform: "translate(-4px, -4px)" }}
-              >
-                <motion.div animate={{ scale: isClicking ? 0.7 : 1 }} transition={{ duration: 0.15 }}>
-                  <MousePointer2 size={24} className="text-black drop-shadow-lg" fill="rgba(0,0,0,0.9)" />
-                </motion.div>
-                <AnimatePresence>
-                  {isClicking && (
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0.8 }}
-                      animate={{ scale: 2.5, opacity: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 border-white/60"
-                    />
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-
-            {/* Scene label */}
-            {isPlaying && scene !== "ending" && config.label && (
-              <motion.div
-                key={`label-${scene}`}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className="absolute top-4 left-4 z-30 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10"
-              >
-                <span className="text-xs font-medium text-white/90">{config.label}</span>
-              </motion.div>
-            )}
-
-            {/* Progress dots */}
-            {isPlaying && scene !== "ending" && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-                {sceneOrder
-                  .filter((s) => s !== "ending")
-                  .map((s, i) => (
-                    <motion.div
-                      key={s}
-                      className={`h-1.5 rounded-full transition-colors duration-300 ${
-                        i === sceneIndex ? "bg-white w-6" : i < sceneIndex ? "bg-white/60 w-1.5" : "bg-white/30 w-1.5"
-                      }`}
-                      layout
-                    />
-                  ))}
-              </div>
-            )}
-
-            {/* Ending screen */}
             <AnimatePresence>
-              {scene === "ending" && isPlaying && (
+              {hasStarted && showControls && (
                 <motion.div
-                  key="ending"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 1 }}
-                  className="absolute inset-0 flex flex-col items-center justify-center bg-black z-20"
+                  key="controls"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.25 }}
+                  className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-3 pt-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                    className="text-center"
+                  <div
+                    className="group/bar relative h-1.5 w-full rounded-full bg-white/20 cursor-pointer mb-3"
+                    onClick={handleSeek}
                   >
-                    <motion.div
-                      className="text-5xl sm:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent"
-                      animate={{
-                        textShadow: [
-                          "0 0 20px rgba(168,85,247,0.4)",
-                          "0 0 40px rgba(168,85,247,0.6)",
-                          "0 0 20px rgba(168,85,247,0.4)",
-                        ],
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                      style={{ width: `${progress}%` }}
+                    />
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary opacity-0 group-hover/bar:opacity-100 transition-opacity"
+                      style={{ left: `${progress}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 text-white">
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      className="hover:text-primary transition-colors"
+                      aria-label={isPlaying ? "Pause" : "Play"}
                     >
-                      STEMConnect
-                    </motion.div>
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 1.2, duration: 0.6 }}
-                      className="text-white/70 text-lg tracking-wide"
+                      {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={toggleMute}
+                      className="hover:text-primary transition-colors"
+                      aria-label={isMuted ? "Unmute" : "Mute"}
                     >
-                      Learn Together. Build Together.
-                    </motion.p>
-                  </motion.div>
-                  <motion.div
-                    className="absolute w-64 h-64 rounded-full"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0, 0.3, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, delay: 0.8 }}
-                    style={{
-                      background: "radial-gradient(circle, rgba(168,85,247,0.3) 0%, transparent 70%)",
-                    }}
-                  />
+                      {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                    </button>
+                    <span className="text-xs tabular-nums text-white/80">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={enterFullscreen}
+                      className="ml-auto hover:text-primary transition-colors"
+                      aria-label="Fullscreen"
+                    >
+                      <Maximize2 size={18} />
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Caption bar */}
           <div className="p-4 sm:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">STEMConnect Platform Walkthrough</p>
