@@ -238,8 +238,8 @@ const Demo = () => {
               <p className="text-sm font-medium text-foreground">STEMConnect Platform Walkthrough</p>
               <p className="text-xs text-muted-foreground mt-1">Auth · Home · Course Chat · Quizzes · Projects</p>
             </div>
-            <a href="#projects" className="text-xs text-primary hover:underline flex items-center gap-1">
-              View Project <ExternalLink size={12} />
+            <a href="https://stemconnect-five.vercel.app/" className="text-xs text-primary hover:underline flex items-center gap-1">
+              View Website <ExternalLink size={12} />
             </a>
           </div>
         </motion.div>
